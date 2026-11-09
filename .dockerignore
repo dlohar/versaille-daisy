@@ -1,0 +1,10 @@
+# only what the Dockerfile copies is needed
+.git
+target
+project/target
+project/project
+output
+results
+daisy
+*.log
+**/.DS_Store

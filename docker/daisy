@@ -1,0 +1,8 @@
+#!/bin/bash
+# Daisy launcher used inside the Docker image (/versaille-daisy).
+DAISY_HOME="${DAISY_HOME:-/versaille-daisy}"
+CP=$(ls "$DAISY_HOME"/lib/*.jar | tr '\n' ':')
+export LC_NUMERIC=en_US.UTF-8
+java ${DAISY_JAVA_OPTS:--Xms1G -Xmx2G} -Xss1G -classpath "$CP" -Dscala.usejavacp=false \
+  scala.tools.nsc.MainGenericRunner -classpath "$CP" daisy.Main "$@" 2>&1 | tee -i last.log
+exit ${PIPESTATUS[0]}
