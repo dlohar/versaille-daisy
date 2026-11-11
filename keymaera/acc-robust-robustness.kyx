@@ -1,0 +1,73 @@
+ArchiveEntry "Versaille-Daisy/ACC_ROBUST_ROBUSTNESS"
+Definitions
+Bool extra(Real deltaA, Real margin) <-> (deltaA > 0 & deltaA = margin/4);
+Bool inv1(Real rPos, Real rVel, Real A, Real B, Real T, Real margin) <-> ((rPos > rVel^2 / (2*A) | (rPos > 0 & rVel>0)) & rPos > 0 & T > 0 & A > 0 & B > 0 & margin>0);
+Bool inv(Real rPos, Real rVel, Real A, Real B, Real T, Real deltaA, Real margin) <-> (inv1(rPos, rVel, A, B, T, margin) & extra(deltaA, margin));
+Bool ctrl(Real rPos, Real rVel, Real rAccpost, Real A, Real B, Real T, Real margin) <-> (
+    A <= rAccpost &
+    rAccpost <= A + margin |
+    rAccpost >= -B &
+    rAccpost  <  A + margin &
+    rAccpost != 0 &
+    (
+      (-rVel / rAccpost > T | -rVel / rAccpost  <  0) &
+      (
+        rPos + rVel * T + rAccpost * T^2 / 2 > (rVel + rAccpost * T)^2 / (2 * A) |
+        rPos + rVel * T + rAccpost * T^2 / 2 > 0 & rVel + rAccpost * T > 0
+      ) |
+      (
+        rPos + rVel * T + rAccpost * T^2 / 2 > (rVel + rAccpost * T)^2 / (2 * A) |
+        rPos + rVel * T + rAccpost * T^2 / 2 > 0 & rVel + rAccpost * T > 0
+      ) &
+      rPos - rVel^2 / rAccpost + rVel^2 / (2 * rAccpost) > 0
+    ) |
+    (rPos + rVel * T > rVel^2 / (2 * A) | rPos + rVel * T > 0 & rVel > 0) & rAccpost = 0
+);
+End.
+ProgramVariables
+  Real rPos;
+  Real A;
+  Real B;
+  Real T;
+  Real rVel;
+  Real rAccpost;
+  Real deltaA;
+  Real epsilonV;
+  Real margin;
+End.  
+Problem
+\forall T (
+\forall A (
+\forall B (
+\forall margin (
+\forall rPos (
+\forall rVel (
+    \exists rAccpost (
+        \forall epsilonA (
+            inv(rPos, rVel, A, B, T, deltaA, margin) -> (
+                ctrl(rPos, rVel, rAccpost, A, B, T, margin) & (
+                    (deltaA <= epsilonA & (epsilonA <= deltaA) -> ctrl(rPos, rVel, rAccpost+epsilonA, A, B, T, margin))
+                )
+            )
+        )
+    )
+)
+)
+)
+)
+)
+)
+End.
+Tactic 
+unfold;
+existsR("A+margin/2", 'R=="\exists rAccpost \forall epsilonA (inv(rPos,rVel,A,B,T,deltaA,margin)->ctrl(rPos,rVel,rAccpost,A,B,T,margin)&(deltaA<=epsilonA&epsilonA<=deltaA->ctrl(rPos,rVel,rAccpost+epsilonA,A,B,T,margin)))");
+unfold; <(
+  "ctrl(rPos,rVel,A+margin/2,A,B,T,margin)":
+    expandAllDefs();
+    QE,
+  "deltaA<=epsilonA&epsilonA<=deltaA->ctrl(rPos,rVel,A+margin/2+epsilonA,A,B,T,margin)":
+    expandAllDefs();
+    QE
+)
+End.
+End.

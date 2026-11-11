@@ -1,0 +1,128 @@
+ArchiveEntry "Versaille-Daisy/ROBOT-INPUT-ROBUSTNESS"
+Definitions
+  /* Maximal cycle time */
+  Real T;
+  /* Maximal velocity */
+  Real V;
+  
+  /* X boundary */
+  Real maxX;
+  /* Y boundary */
+  Real maxY;
+  
+  Real deltaVx;
+  Real deltaVy;
+  
+  Real deltaPx;
+  Real deltaPy;
+  
+    Bool robustnessConditions <-> (
+        /* Output Perturbation */
+        V >= 2*deltaVx & V >= 2*deltaVy & maxX >= 2*T*deltaVx & maxY >= 2*T*deltaVy &
+        /* Input Perturbation */
+        maxX >= 2*deltaPx & maxY >= 2*deltaPy & T*deltaVx>=deltaPx&T*deltaVy>=deltaPy
+    );
+    Bool envConditions <-> (T>0 & V > 0 & maxX > 0 & maxY > 0 & deltaVx > 0 & deltaVy > 0 & deltaPx>0 & deltaPy>0);
+    Bool invariant(Real px, Real py) <-> (
+        0 <= px  &  px <= maxX  &  0 <= py  &  py <= maxY &
+        envConditions & robustnessConditions
+    );
+    
+    Bool ctrlBidirectional(Real px, Real py, Real vxpost, Real vypost) <-> (
+        -V <= vxpost &
+        vxpost <= V &
+        -V <= vypost &
+        vypost <= V &
+        0 <= px + T * vxpost &
+        px + T * vxpost <= maxX &
+        0 <= py + T * vypost &
+        py + T * vypost <= maxY
+    );
+    
+    
+    Bool ctrlUnidirectional(Real px, Real py, Real vxpost, Real vypost) <-> (
+        0 <= vxpost &
+        vxpost <= V &
+        0 <= vypost &
+        vypost <= V &
+        0 <= px + T * vxpost &
+        px + T * vxpost <= maxX &
+        0 <= py + T * vypost &
+        py + T * vypost <= maxY
+    );
+    
+    Bool postPerturb(Real vx, Real vy, Real epsVxpost, Real epsVypost, Real vxpost, Real vypost) <-> (
+        -deltaVx <= epsVxpost &
+        epsVxpost <= deltaVx &
+        -deltaVy <= epsVypost &
+        epsVypost <= deltaVy & vxpost = vx + epsVxpost & vypost = vy + epsVypost
+    );
+    
+    Bool prePerturb(Real pxIn, Real pyIn, Real pxIn2, Real pyIn2) <-> (
+        -deltaPx <= (pxIn - pxIn2) & (pxIn - pxIn2) <= deltaPx &
+        -deltaPy <= (pyIn - pyIn2) & (pyIn - pyIn2) <= deltaPy
+    );
+End.
+Problem
+
+\forall pxIn \forall pyIn
+\forall pxIn2 \forall pyIn2
+\exists vx \exists vy
+\forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (
+    (invariant(pxIn, pyIn) & prePerturb(pxIn, pyIn, pxIn2, pyIn2) ) -> (
+        ctrlBidirectional(pxIn2, pyIn2, vx, vy) & (postPerturb(vx, vy, epsVxpost, epsVypost, vxpost, vypost) ->
+        ctrlBidirectional(pxIn, pyIn, vxpost, vypost) )
+    )
+)
+
+End.
+Tactic "Proof"
+unfold;
+existsR("deltaVx()*(maxX()-2*pxIn)/maxX()", 'R=="\exists vx \exists vy \forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (invariant(pxIn,pyIn)&prePerturb(pxIn,pyIn,pxIn2,pyIn2)->ctrlBidirectional(pxIn2,pyIn2,vx,vy)&(postPerturb(vx,vy,epsVxpost,epsVypost,vxpost,vypost)->ctrlBidirectional(pxIn,pyIn,vxpost,vypost)))");
+existsR("deltaVy()*(maxY()-2*pyIn)/maxY()", 'R=="\exists vy \forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (invariant(pxIn,pyIn)&prePerturb(pxIn,pyIn,pxIn2,pyIn2)->ctrlBidirectional(pxIn2,pyIn2,deltaVx()*(maxX()-2*pxIn)/maxX(),vy)&(postPerturb(deltaVx()*(maxX()-2*pxIn)/maxX(),vy,epsVxpost,epsVypost,vxpost,vypost)->ctrlBidirectional(pxIn,pyIn,vxpost,vypost)))");
+expandAllDefs();
+unfold;
+andR('R=="(-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()&deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY())&(-deltaVx()<=epsVxpost&epsVxpost<=deltaVx()&-deltaVy()<=epsVypost&epsVypost<=deltaVy()&vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost&vypost=deltaVy()*(maxY()-2*pyIn)/maxY()+epsVypost->-V()<=vxpost&vxpost<=V()&-V()<=vypost&vypost<=V()&0<=pxIn+T()*vxpost&pxIn+T()*vxpost<=maxX()&0<=pyIn+T()*vypost&pyIn+T()*vypost<=maxY())"); <(
+  "-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()&deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+    andR('R=="-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()&deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+      "-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()":
+        QE,
+      "deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+        andR('R=="deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+          "deltaVx()*(maxX()-2*pxIn)/maxX()<=V()":
+            QE,
+          "-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+            andR('R=="-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+              "-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()":
+                QE,
+              "deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+                andR('R=="deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+                  "deltaVy()*(maxY()-2*pyIn)/maxY()<=V()":
+                    QE,
+                  "0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+                    andR('R=="0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+                      "0<=pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())":
+                        QE,
+                      "pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+                        andR('R=="pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+                          "pxIn2+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()":
+                            QE,
+                          "0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+                            andR('R=="0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()"); <(
+                              "0<=pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())":
+                                QE,
+                              "pyIn2+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+                                QE
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    ),
+  "-deltaVx()<=epsVxpost&epsVxpost<=deltaVx()&-deltaVy()<=epsVypost&epsVypost<=deltaVy()&vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost&vypost=deltaVy()*(maxY()-2*pyIn)/maxY()+epsVypost->-V()<=vxpost&vxpost<=V()&-V()<=vypost&vypost<=V()&0<=pxIn+T()*vxpost&pxIn+T()*vxpost<=maxX()&0<=pyIn+T()*vypost&pyIn+T()*vypost<=maxY()":
+    unfold;
+    QE
+)
+End.
+End.

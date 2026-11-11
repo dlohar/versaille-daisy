@@ -1,0 +1,81 @@
+ArchiveEntry "Versaille-Daisy/ROBOT-ROBUSTNESS"
+Definitions
+  /* Maximal cycle time */
+  Real T;
+  /* Maximal velocity */
+  Real V;
+  
+  /* X boundary */
+  Real maxX;
+  /* Y boundary */
+  Real maxY;
+  
+  Real deltaVx;
+  Real deltaVy;
+    Bool robustnessConditions <-> (V >= 2*deltaVx & V >= 2*deltaVy & maxX >= 2*T*deltaVx & maxY >= 2*T*deltaVy);
+    Bool envConditions <-> (T>0 & V > 0 & maxX > 0 & maxY > 0 & deltaVx > 0 & deltaVy > 0);
+    Bool invariant(Real px, Real py) <-> (
+        0 <= px  &  px <= maxX  &  0 <= py  &  py <= maxY &
+        envConditions & robustnessConditions
+    );
+    
+    Bool ctrlBidirectional(Real px, Real py, Real vxpost, Real vypost) <-> (
+        -V <= vxpost &
+        vxpost <= V &
+        -V <= vypost &
+        vypost <= V &
+        0 <= px + T * vxpost &
+        px + T * vxpost <= maxX &
+        0 <= py + T * vypost &
+        py + T * vypost <= maxY
+    );
+    
+    
+    Bool ctrlUnidirectional(Real px, Real py, Real vxpost, Real vypost) <-> (
+        0 <= vxpost &
+        vxpost <= V &
+        0 <= vypost &
+        vypost <= V &
+        0 <= px + T * vxpost &
+        px + T * vxpost <= maxX &
+        0 <= py + T * vypost &
+        py + T * vypost <= maxY
+    );
+    
+    Bool postPerturb(Real vx, Real vy, Real epsVxpost, Real epsVypost, Real vxpost, Real vypost) <-> (
+        -deltaVx <= epsVxpost &
+        epsVxpost <= deltaVx &
+        -deltaVy <= epsVypost &
+        epsVypost <= deltaVy & vxpost = vx + epsVxpost & vypost = vy + epsVypost
+    );
+End.
+Problem
+
+\forall pxIn \forall pyIn \exists vx \exists vy \forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (
+    invariant(pxIn, pyIn) -> (
+        ctrlBidirectional(pxIn, pyIn, vx, vy) & (postPerturb(vx, vy, epsVxpost, epsVypost, vxpost, vypost) ->
+        ctrlBidirectional(pxIn, pyIn, vxpost, vypost) )
+    )
+)
+
+End.
+Tactic "Proof"
+unfold;
+expandAllDefs();
+existsR("deltaVx()*(maxX()-2*pxIn)/maxX()", 'R=="\exists vx \exists vy \forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (0<=pxIn&pxIn<=maxX()&0<=pyIn&pyIn<=maxY()&(T()>0&V()>0&maxX()>0&maxY()>0&deltaVx()>0&deltaVy()>0)&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()->(-V()<=vx&vx<=V()&-V()<=vy&vy<=V()&0<=pxIn+T()*vx&pxIn+T()*vx<=maxX()&0<=pyIn+T()*vy&pyIn+T()*vy<=maxY())&(-deltaVx()<=epsVxpost&epsVxpost<=deltaVx()&-deltaVy()<=epsVypost&epsVypost<=deltaVy()&vxpost=vx+epsVxpost&vypost=vy+epsVypost->-V()<=vxpost&vxpost<=V()&-V()<=vypost&vypost<=V()&0<=pxIn+T()*vxpost&pxIn+T()*vxpost<=maxX()&0<=pyIn+T()*vypost&pyIn+T()*vypost<=maxY()))");
+existsR("deltaVy()*(maxY()-2*pyIn)/maxY()", 'R=="\exists vy \forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (0<=pxIn&pxIn<=maxX()&0<=pyIn&pyIn<=maxY()&(T()>0&V()>0&maxX()>0&maxY()>0&deltaVx()>0&deltaVy()>0)&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()->(-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()&deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=vy&vy<=V()&0<=pxIn+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn+T()*vy&pyIn+T()*vy<=maxY())&(-deltaVx()<=epsVxpost&epsVxpost<=deltaVx()&-deltaVy()<=epsVypost&epsVypost<=deltaVy()&vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost&vypost=vy+epsVypost->-V()<=vxpost&vxpost<=V()&-V()<=vypost&vypost<=V()&0<=pxIn+T()*vxpost&pxIn+T()*vxpost<=maxX()&0<=pyIn+T()*vypost&pyIn+T()*vypost<=maxY()))");
+unfold;
+andR('R=="(-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()&deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY())&(-deltaVx()<=epsVxpost&epsVxpost<=deltaVx()&-deltaVy()<=epsVypost&epsVypost<=deltaVy()&vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost&vypost=deltaVy()*(maxY()-2*pyIn)/maxY()+epsVypost->-V()<=vxpost&vxpost<=V()&-V()<=vypost&vypost<=V()&0<=pxIn+T()*vxpost&pxIn+T()*vxpost<=maxX()&0<=pyIn+T()*vypost&pyIn+T()*vypost<=maxY())"); <(
+  "-V()<=deltaVx()*(maxX()-2*pxIn)/maxX()&deltaVx()*(maxX()-2*pxIn)/maxX()<=V()&-V()<=deltaVy()*(maxY()-2*pyIn)/maxY()&deltaVy()*(maxY()-2*pyIn)/maxY()<=V()&0<=pxIn+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())&pxIn+T()*(deltaVx()*(maxX()-2*pxIn)/maxX())<=maxX()&0<=pyIn+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())&pyIn+T()*(deltaVy()*(maxY()-2*pyIn)/maxY())<=maxY()":
+    QE,
+  "-deltaVx()<=epsVxpost&epsVxpost<=deltaVx()&-deltaVy()<=epsVypost&epsVypost<=deltaVy()&vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost&vypost=deltaVy()*(maxY()-2*pyIn)/maxY()+epsVypost->-V()<=vxpost&vxpost<=V()&-V()<=vypost&vypost<=V()&0<=pxIn+T()*vxpost&pxIn+T()*vxpost<=maxX()&0<=pyIn+T()*vypost&pyIn+T()*vypost<=maxY()":
+    unfold;
+    allL2R('L=="vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost");
+    allL2R('L=="vypost=deltaVy()*(maxY()-2*pyIn)/maxY()+epsVypost");
+    hideL('L=="vxpost=deltaVx()*(maxX()-2*pxIn)/maxX()+epsVxpost");
+    hideL('L=="vypost=deltaVy()*(maxY()-2*pyIn)/maxY()+epsVypost");
+    fullSimplify;
+    QE
+)
+End.
+End.
