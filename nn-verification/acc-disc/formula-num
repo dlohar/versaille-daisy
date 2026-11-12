@@ -1,0 +1,25 @@
+(
+(0<=prel & prel<=100 & -34 <= vrel & vrel <= 34 &
+-100000 <= x1post & x1post <= 100000  &
+-100000 <= x2post & x2post <= 100000  &
+-100000 <= x3post & x3post <= 100000) &
+(
+BOUND <= delta1 & delta1 <= BOUND &
+BOUND <= delta2 & delta2 <= BOUND &
+BOUND <= delta3 & delta3 <= BOUND
+) &
+(prel >= 0 & prel >= vrel^2 / (2*B))
+)
+->
+(
+(x1post+delta1) >= (x2post+delta2) &
+(x1post+delta1) >= (x3post+delta3) &
+(vrel - T*A > 0 | 
+prel + T * vrel + (-A) * T^2 / 2 > (vrel + T * (-A))^2 / (2 * B) ) |
+(x2post+delta2) >= (x1post+delta1) &
+(x2post+delta2) >= (x3post+delta3) &
+((vrel > 0) |
+prel + T * vrel > vrel^2 / (2 * B)) |
+(x3post+delta3) >= (x2post+delta2) &
+(x3post+delta3) >= (x1post+delta1) 
+)

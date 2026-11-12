@@ -20,14 +20,19 @@ docker build -t versaille-daisy .
 ## Start a container
 
 ```bash
-docker run -it --rm -v "$PWD/results:/versaille-daisy/results" versaille-daisy
+docker run -p 8888:8888 versaille-daisy
 ```
-Results written to `/versaille-daisy/results` inside the container appear in `./results` on the host.
+After starting the container, open the following link in your browser: http://127.0.0.1:8888/lab?token=versaille
+
+To copy data from the docker container to your computer use the following instructions: 
+```bash
+docker cp <container name>:/<File I want to copy> ./<where I want to copy it to>
+```
+
 To run Vitis HLS, mount Xilinx installation and tell Daisy where Vitis HLS is:
 
 ```bash
-docker run -it --rm \
-  -v "$PWD/results:/versaille-daisy/results" \
+docker run \
   -v /path/to/Xilinx:/tools/Xilinx:ro \
   -e VITIS_HLS_HOME=/tools/Xilinx/Vitis_HLS/2023.1 \
   versaille-daisy

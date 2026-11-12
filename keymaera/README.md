@@ -1,6 +1,7 @@
 # KeYmaera Proof Files
 
-The proof files were tested with version 5.1.2 of KeYmaera X
+The proof files were tested with version 5.1.2 of KeYmaera X.
+All files can be copied into a running KeYmaera X instance to re-run proofs there.
 
 ## Running example
 - Safety of control envelope: robot-safety.kyx  
