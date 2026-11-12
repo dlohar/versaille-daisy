@@ -1,0 +1,8 @@
+"prel"=>(Input,1),
+"vrel"=>(Input,2),
+"delta1"=>(Input,3),
+"delta2"=>(Input,4),
+"delta3"=>(Input,5),
+"x1post"=>(Output,1),
+"x2post"=>(Output,2),
+"x3post"=>(Output,3)

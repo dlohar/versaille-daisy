@@ -1,4 +1,4 @@
-# ---------- build stage: compile Daisy with sbt ----------
+# ---------- Daisy build stage ----------
 FROM eclipse-temurin:8-jdk-jammy AS build
 
 RUN apt-get update \
@@ -59,4 +59,61 @@ RUN rm -f scripts/build.sh \
  && chmod +x daisy scripts/*.sh \
  && chmod -R a+rwX /versaille-daisy
 
-CMD ["/bin/bash"]
+# ---------- Versaille image + Daisy ----------
+FROM samweb/versaille:main@sha256:ffa8c4995733ba7f7e27168c9db1fde635e0245bc7424d771e008abe5d72d613
+USER root
+
+COPY --from=eclipse-temurin:8-jre-jammy /opt/java/openjdk /opt/java/openjdk
+ENV JAVA_HOME=/opt/java/openjdk \
+    DAISY_HOME=/versaille-daisy \
+    PATH=/opt/java/openjdk/bin:/versaille-daisy:$PATH
+
+ARG TARGETARCH
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends bsdextrautils \
+ && if [ "$TARGETARCH" = "amd64" ] || [ -z "$TARGETARCH" ]; then \
+      apt-get install -y --no-install-recommends \
+        libtinfo5 libncurses5 libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+        libfreetype6 libfontconfig1; \
+    fi \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /out/lib    /home/${NB_USER}/versaille-daisy/lib
+COPY library                  /home/${NB_USER}/versaille-daisy/library
+COPY testcases                /home/${NB_USER}/versaille-daisy/testcases
+COPY scripts                  /home/${NB_USER}/versaille-daisy/scripts
+COPY docker/daisy             /home/${NB_USER}/versaille-daisy/daisy
+COPY README-docker.md         /home/${NB_USER}/versaille-daisy/README.md
+COPY LICENSE LEON_LICENSE     /home/${NB_USER}/versaille-daisy/
+
+RUN rm -f /home/${NB_USER}/versaille-daisy/scripts/build.sh \
+ && mkdir -p /home/${NB_USER}/versaille-daisy/output /home/${NB_USER}/versaille-daisy/results \
+ && chmod +x /home/${NB_USER}/versaille-daisy/daisy /home/${NB_USER}/versaille-daisy/scripts/*.sh \
+ && chown -R ${NB_UID}:${NB_GID} /home/${NB_USER}/versaille-daisy \
+ && chmod -R a+rwX /home/${NB_USER}/versaille-daisy
+ENV DAISY_HOME=/home/${NB_USER}/versaille-daisy
+
+# ---------- VeryDiff installation ----------
+ENV VERYDIFF_VERSION=317d9b4e
+ENV VERYDIFF_NO_GUROBI=1
+# Julia setup for precompilation
+ENV JULIA_DEPOT_PATH=/opt/julia \
+    JULIA_PKGDIR=/opt/julia \
+    JULIA_CPU_TARGET=generic
+RUN cd /software &&\
+    git clone https://github.com/samysweb/VeryDiff.git VeryDiff &&\
+    cd VeryDiff &&\
+    git checkout $VERYDIFF_VERSION &&\
+    julia --project=. -e 'using Pkg;Pkg.instantiate();Pkg.build();'
+
+ENV PATH=/software/VeryDiff/deps/VeryDiff/bin/:$PATH
+
+COPY nn-verification /home/${NB_USER}/nn-verification
+
+RUN chown -R ${NB_UID}:${NB_GID} /home/${NB_USER}
+
+USER ${NB_UID}
+WORKDIR /home/${NB_USER}
+
+
+CMD ["start-notebook.py", "--NotebookApp.token='versaille'"]

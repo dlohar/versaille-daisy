@@ -1,49 +1,23 @@
 # VerSAILLE-Daisy
 
-## Requirements
+Guaranteeing the safety of an NN control system based on the approach presented in our paper consists of the following steps:
 
-- Java 8
-- sbt 0.13.15 (`project/build.properties`)
-- Optional: Vitis HLS (or Vivado HLS) in `PATH` for synthesis
+- Proving the safety of a dL-based model of the CPS:  
+  This is discussed in [/keymaera/README.md](/keymaera/README.md)
+- Proving the safety of the NN:  
+  This is discussed in [/nn-verification/README.md](/nn-verification/README.md)
+- Optionally: Proving the equivalence of a pruned NN:  
+  This is discussed in [/nn-verification/README.md](/nn-verification/README.md)
+- Synthesizing an implementation of the NN:  
+  This is discussed in [Daisy.md](Daisy.md)
 
-Note: Vitis HLS runs only on x86-64 Linux. On macOS, Daisy works but `--xilinx` does not.
+## Setup
+You can either build the docker container yourself using the Docker file in this directory (see [/README-docker.md](/README-docker.md)) or pull and run it from docker hub:
 
-## Build
-
-```bash
-sbt compile script
+```
+docker run -p 8888:8888 samweb/versaille-daisy
 ```
 
-## Run
+After starting the container, open the following link in your browser: http://127.0.0.1:8888/lab?token=versaille
 
-Run from this directory, or set `DAISY_HOME` to this directory: `library/` is loaded from there.
-
-```bash
-# fully unrolled code, uniform Fixed<n> (e.g. Fixed32, Fixed40, Fixed64),
-# interval ranges, affine errors, dead neuron removal
-./daisy --qnn --qnn-prune-dead --codegen --lang=C --apfixed --precision=Fixed<n> <network.scala>
-
-# same, but with loops
-./daisy --qnn --qnn-prune-dead --codegen --lang=C --apfixed --precision=Fixed<n> --codegenNNOriginal <network.scala>
-
-# mixed-precision tuning (bit widths from --min-bits, default 30, up to Fixed<n>),
-# unrolled / with loops
-./daisy --qnn --codegen --lang=C --apfixed --mixed-tuning --precision=Fixed<n> <network.scala>
-./daisy --qnn --codegen --lang=C --apfixed --mixed-tuning --precision=Fixed<n> --codegenNNOriginal <network.scala>
-./daisy --qnn --codegen --lang=C --apfixed --mixed-tuning --precision=Fixed32 --min-bits=8 <network.scala>
-```
-
-The generated code goes to `output/<ObjectName>.cpp`.
-
-```bash
-scripts/run.sh <network.scala> [--mixed] [--loops] [--precision=Fixed32] \
-               [--range=interval|affine] [--error=interval|affine] \
-               [--min-bits=N] [--no-prune] [--skip-zeros] [--xilinx] [--fnc=nn1] [--out=<dir>]
-
-scripts/run_small.sh [--out=<dir>] [run.sh options, e.g. --xilinx]    # same for run_acc.sh, run_vcas.sh
-```
-
-Vitis HLS is only needed for `--xilinx` / `synth.sh`. It is found in `PATH`, or via
-`VITIS_HLS_HOME` (e.g. `export VITIS_HLS_HOME=/tools/Xilinx/Vitis_HLS/2023.1`, whose
-`settings64.sh` is sourced). Target: `HLS_PART` (default `xc7z020clg400-1`, PYNQ-Z1) and
-`HLS_CLOCK` in ns (default 10). Numbers are csynth estimates.
+From there you should be able to access a terminal where you can run verification tasks (NCubeV and VeryDiff) and synthesis tasks (Daisy) as described in the appended files

@@ -1,0 +1,97 @@
+ArchiveEntry "Versaille-Daisy/ROBOT-UNI-DIR-SAFETY-NOT-ROBUST"
+ProgramVariables  
+  Real px;
+  Real py;
+  Real vx;
+  Real vy;
+  Real c;
+  Real epsVx;
+  Real epsVy;
+End.  
+Definitions
+  /* Maximal cycle time */
+  Real T;
+  /* Maximal velocity */
+  Real V;
+  
+  /* X boundary */
+  Real maxX;
+  /* Y boundary */
+  Real maxY;
+  Real deltaVx;
+  Real deltaVy;
+  
+  Bool robustnessConditions <-> (V >= 2*deltaVx & V >= 2*deltaVy & maxX >= 2*T*deltaVx & maxY >= 2*T*deltaVy & deltaVx>0 & deltaVy>0);
+  
+  Bool inBoundary(Real x, Real y) <-> (0 <= x & x <= maxX & 0 <= y & y <= maxY);
+  Bool velRange(Real vx, Real vy) <-> (0 <= vx & vx <= V & 0 <= vy & vy <= V);
+  Bool envConditions <-> (T>0 & V > 0 & maxX > 0 & maxY > 0 & robustnessConditions);
+End.
+Problem
+envConditions
+->
+!(
+\forall px \forall py (
+inBoundary(px,py) &
+envConditions
+->
+[{
+    {
+        /* DRIVE */
+        vx := *;
+        vy := *;
+        ?(
+            velRange(vx,vy) &
+            inBoundary(
+                px + T*vx,
+                py + T*vy
+            )
+        );
+    }^@;
+    epsVx:=*;
+    epsVy:=*;
+    ?(-deltaVx <= epsVx & epsVx <= deltaVx & -deltaVy <= epsVy & epsVy <= deltaVy);
+    vx:=(vx + epsVx);
+    vy:=(vy + epsVy);
+    {
+        c:=0;
+        {px'=vx,py'=vy, c'=1 & c<=T};
+    }
+}*@invariant(inBoundary(px,py))
+] inBoundary(px,py)
+))
+End.
+Tactic "Proof"
+implyR('R=="envConditions()->!\forall px \forall py (inBoundary(px,py)&envConditions()->[{{vx:=*;vy:=*;?velRange(vx,vy)&inBoundary(px+T()*vx,py+T()*vy);}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*]inBoundary(px,py))");
+notAll('R=="!\forall px \forall py (inBoundary(px,py)&envConditions()->[{{vx:=*;vy:=*;?velRange(vx,vy)&inBoundary(px+T()*vx,py+T()*vy);}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*]inBoundary(px,py))");
+notAll('R=="\exists px #!\forall py (inBoundary(px,py)&envConditions()->[{{vx:=*;vy:=*;?velRange(vx,vy)&inBoundary(px+T()*vx,py+T()*vy);}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*]inBoundary(px,py))#");
+expandAllDefs();
+existsR("maxX()", 'R=="\exists px \exists py (!((0<=px&px<=maxX()&0<=py&py<=maxY())&T()>0&V()>0&maxX()>0&maxY()>0&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()&deltaVx()>0&deltaVy()>0->[{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*](0<=px&px<=maxX()&0<=py&py<=maxY())))");
+existsR("maxY()", 'R=="\exists py (!((0<=px&px<=maxX()&0<=py&py<=maxY())&T()>0&V()>0&maxX()>0&maxY()>0&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()&deltaVx()>0&deltaVy()>0->[{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*](0<=px&px<=maxX()&0<=py&py<=maxY())))");
+notImply('R=="!((0<=px&px<=maxX()&0<=py&py<=maxY())&T()>0&V()>0&maxX()>0&maxY()>0&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()&deltaVx()>0&deltaVy()>0->[{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*](0<=px&px<=maxX()&0<=py&py<=maxY()))");
+andR('R=="((0<=px&px<=maxX()&0<=py&py<=maxY())&T()>0&V()>0&maxX()>0&maxY()>0&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()&deltaVx()>0&deltaVy()>0)&![{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*](0<=px&px<=maxX()&0<=py&py<=maxY())"); <(
+  "(0<=px&px<=maxX()&0<=py&py<=maxY())&T()>0&V()>0&maxX()>0&maxY()>0&V()>=2*deltaVx()&V()>=2*deltaVy()&maxX()>=2*T()*deltaVx()&maxY()>=2*T()*deltaVy()&deltaVx()>0&deltaVy()>0":
+    auto,
+  "![{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*](0<=px&px<=maxX()&0<=py&py<=maxY())":
+    notBox('R=="![{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*](0<=px&px<=maxX()&0<=py&py<=maxY())");
+    unfold;
+    iterated('R=="<{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))");
+    orR('R=="!(0<=px&px<=maxX()&0<=py&py<=maxY())|<{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))");
+    hideR('R=="!(0<=px&px<=maxX()&0<=py&py<=maxY())");
+    unfold;
+    existsR("deltaVx()", 'R=="\exists epsVx <epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))");
+    unfold;
+    existsR("deltaVy()", 'R=="\exists epsVy <?-deltaVx()<=deltaVx()&deltaVx()<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+deltaVx();vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))");
+    unfold; <(
+      "-deltaVx()<=deltaVx()&deltaVx()<=deltaVx()&-deltaVy()<=deltaVy()&deltaVy()<=deltaVy()":
+        auto,
+      "<vx:=vx+deltaVx();vy:=vy+deltaVy();c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))":
+        iterated('R=="<{px'=vx+deltaVx(),py'=vy+deltaVy(),c'=1&c<=T()}>#<{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))#");
+        diamondOr('R=="<{px'=vx+deltaVx(),py'=vy+deltaVy(),c'=1&c<=T()}>(!(0<=px&px<=maxX()&0<=py&py<=maxY())|<{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY())))");
+        orR('R=="<{px'=vx+deltaVx(),py'=vy+deltaVy(),c'=1&c<=T()}>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))|<{px'=vx+deltaVx(),py'=vy+deltaVy(),c'=1&c<=T()}><{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))");
+        hideR('R=="<{px'=vx+deltaVx(),py'=vy+deltaVy(),c'=1&c<=T()}><{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}><{{vx:=*;vy:=*;?(0<=vx&vx<=V()&0<=vy&vy<=V())&0<=px+T()*vx&px+T()*vx<=maxX()&0<=py+T()*vy&py+T()*vy<=maxY();}^@epsVx:=*;epsVy:=*;?-deltaVx()<=epsVx&epsVx<=deltaVx()&-deltaVy()<=epsVy&epsVy<=deltaVy();vx:=vx+epsVx;vy:=vy+epsVy;c:=0;{px'=vx,py'=vy,c'=1&c<=T()}}*>(!(0<=px&px<=maxX()&0<=py&py<=maxY()))");
+        auto
+    )
+)
+End.
+End.

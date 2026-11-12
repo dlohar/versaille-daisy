@@ -1,0 +1,2 @@
+#!/bin/bash
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 /software/NCubeV/deps/NCubeV/bin/NCubeV "$@"

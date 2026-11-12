@@ -1,0 +1,86 @@
+ArchiveEntry "Versaille-Daisy/ROBOT-IMPLEMENTATION-INPUT"
+Definitions
+  /* Maximal cycle time */
+  Real T = 1.0;
+  /* Maximal velocity */
+  Real V = 10.0;
+  
+  Real M = 9.5;
+  
+  /* X boundary */
+  Real maxX = 100;
+  /* Y boundary */
+  Real maxY = 100;
+  
+  Real deltaVx = 0.25;
+  Real deltaVy = 0.25;
+  
+  Real deltaPx=0.25;
+  Real deltaPy=0.25;
+  
+    Bool robustnessConditions <-> (
+        /* Output Perturbation */
+        V >= 2*deltaVx & V >= 2*deltaVy & maxX >= 2*T*deltaVx & maxY >= 2*T*deltaVy &
+        /* Input Perturbation */
+        maxX >= 2*deltaPx & maxY >= 2*deltaPy & T*deltaVx>=deltaPx&T*deltaVy>=deltaPy
+    );
+    Bool envConditions <-> (T>0 & V > 0 & maxX > 0 & maxY > 0 & deltaVx > 0 & deltaVy > 0);
+    Bool invariant(Real px, Real py) <-> (
+        0 <= px  &  px <= maxX  &  0 <= py  &  py <= maxY &
+        envConditions & robustnessConditions
+    );
+    
+    Bool ctrlBidirectional(Real px, Real py, Real vxpost, Real vypost) <-> (
+        -V <= vxpost &
+        vxpost <= V &
+        -V <= vypost &
+        vypost <= V &
+        0 <= px + T * vxpost &
+        px + T * vxpost <= maxX &
+        0 <= py + T * vypost &
+        py + T * vypost <= maxY
+    );
+    
+    Bool implementation(Real px, Real py, Real vxpost, Real vypost) <-> (
+    
+        vxpost = (1/(0.01*(px + 10)) - M) &
+        vypost = (1/(0.01*(py + 10)) - M)
+        
+    );
+    
+    
+    Bool ctrlUnidirectional(Real px, Real py, Real vxpost, Real vypost) <-> (
+        0 <= vxpost &
+        vxpost <= V &
+        0 <= vypost &
+        vypost <= V &
+        0 <= px + T * vxpost &
+        px + T * vxpost <= maxX &
+        0 <= py + T * vypost &
+        py + T * vypost <= maxY
+    );
+    
+    Bool postPerturb(Real vx, Real vy, Real epsVxpost, Real epsVypost, Real vxpost, Real vypost) <-> (
+        -deltaVx <= epsVxpost &
+        epsVxpost <= deltaVx &
+        -deltaVy <= epsVypost &
+        epsVypost <= deltaVy & vxpost = vx + epsVxpost & vypost = vy + epsVypost
+    );
+    
+    Bool prePerturb(Real pxIn, Real pyIn, Real pxIn2, Real pyIn2) <-> (
+        -deltaPx <= (pxIn - pxIn2) & (pxIn - pxIn2) <= deltaPx &
+        -deltaPy <= (pyIn - pyIn2) & (pyIn - pyIn2) <= deltaPy
+    );
+End.
+Problem
+
+\forall pxIn \forall pyIn \forall pxIn2 \forall pyIn2 \forall vx \forall vy \forall vxpost \forall vypost \forall epsVxpost \forall epsVypost (
+    (invariant(pxIn, pyIn) & prePerturb(pxIn, pyIn, pxIn2, pyIn2) & implementation(pxIn2, pyIn2, vx, vy) & postPerturb(vx, vy, epsVxpost, epsVypost, vxpost, vypost))
+    -> ctrlBidirectional(pxIn, pyIn, vxpost, vypost) 
+)
+
+End.
+Tactic
+auto
+End.
+End.
